@@ -6,6 +6,10 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY packages ./packages
 COPY apps/admin ./apps/admin
 RUN pnpm install --frozen-lockfile --filter @vcd/admin...
+# API_URL entra no build porque o rewrite do next.config é resolvido em build-time;
+# o Railway injeta a variável do serviço como build arg quando declarada aqui.
+ARG API_URL
+ENV API_URL=$API_URL
 ENV NEXT_STANDALONE=1
 RUN pnpm --filter @vcd/admin build
 
