@@ -1,0 +1,869 @@
+// ============================================================================
+// "Você conhece Deus?" — modelo de dados completo (v1.0)
+// Convenções: PK uuid v7 · createdAt/updatedAt em tudo · soft-delete onde há
+// obrigação de moderação/retenção · exclusão LGPD = anonimização + purga.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum Language {
+  pt_BR @map("pt-BR")
+  en
+}
+
+enum UserStatus {
+  active
+  suspended
+  banned
+  deletion_requested
+  deleted
+}
+
+enum AuthProvider {
+  apple
+  google
+  email
+}
+
+enum ConsentPurposeKey {
+  spiritual_content // trilha espiritual = dado sensível (LGPD art. 5º II)
+  health_checkins   // humor/sono/alimentação = dado de saúde
+  journal
+  ai_insights       // v1.5 — IA sobre o caderno, consentimento separado
+  marketing_push
+}
+
+enum DsrType {
+  access
+  deletion
+  portability
+}
+
+enum DsrStatus {
+  open
+  processing
+  fulfilled
+  rejected
+}
+
+enum TimeSlotKey {
+  morning
+  midday
+  night
+}
+
+// State machine de curadoria — transições só via service, com guard:
+// approved exige citationVerified=true quando houver citação (Apple 1.1.5).
+enum CurationStatus {
+  generated
+  in_review
+  needs_changes
+  rejected
+  approved
+  audio_pending
+  audio_failed
+  audio_ready
+  scheduled
+  published
+  archived
+}
+
+enum AudioStatus {
+  pending
+  processing
+  ready
+  failed
+}
+
+enum PublicationSlotStatus {
+  open
+  filled
+  published
+  skipped
+}
+
+enum UgcStatus {
+  visible
+  pending_review
+  hidden
+  removed
+}
+
+enum CheckinType {
+  mood
+  sleep
+  food
+}
+
+enum FriendshipStatus {
+  pending
+  accepted
+}
+
+enum NotificationKind {
+  morning_routine
+  night_routine
+  reflection_ready
+}
+
+enum DevicePlatform {
+  ios
+  android
+}
+
+enum SubscriptionSource {
+  app_store
+  play_store
+  stripe
+}
+
+enum SubscriptionStatus {
+  trialing
+  active
+  grace
+  canceled
+  expired
+}
+
+enum ModerationSource {
+  auto_filter
+  user_report
+}
+
+enum ModerationFlagStatus {
+  open
+  reviewing
+  resolved
+  dismissed
+}
+
+enum ModerationResolution {
+  none
+  removed
+  warned
+  suspended
+  banned
+}
+
+enum ModeratedContentType {
+  comment
+  intention
+  profile
+}
+
+enum StaffRole {
+  admin
+  curator
+  moderator
+  analyst
+}
+
+// ----------------------------------------------------------------------------
+// Identidade e consentimento
+// ----------------------------------------------------------------------------
+
+model User {
+  id           String     @id @default(uuid(7))
+  email        String?    @unique // nullable: Apple private relay pode ocultar
+  displayName  String
+  handle       String     @unique
+  avatarUrl    String?
+  language     Language   @default(pt_BR)
+  timezone     String     @default("America/Sao_Paulo")
+  status       UserStatus @default(active)
+  premiumUntil DateTime? // cache do entitlement (fonte de verdade: RevenueCat)
+
+  trackId String
+  track   Track  @relation(fields: [trackId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  authIdentities        AuthIdentity[]
+  refreshTokens         RefreshToken[]
+  consents              UserConsent[]
+  dsrRequests           DataSubjectRequest[]
+  comments              Comment[]
+  intentions            Intention[]
+  intentionSupports     IntentionSupport[]
+  checkins              Checkin[]
+  journalEntries        JournalEntry[]
+  encryptionKeys        UserEncryptionKey[]
+  following             Follow[]             @relation("follower")
+  followers             Follow[]             @relation("followee")
+  friendshipsA          Friendship[]         @relation("userA")
+  friendshipsB          Friendship[]         @relation("userB")
+  blocksGiven           Block[]              @relation("blocker")
+  blocksReceived        Block[]              @relation("blocked")
+  streak                Streak?
+  notificationSchedules NotificationSchedule[]
+  devices               Device[]
+  subscriptions         Subscription[]
+  entitlements          Entitlement[]
+  moderationReports     ModerationFlag[]     @relation("reporter")
+  moderationActions     ModerationAction[]   @relation("targetUser")
+
+  @@map("users")
+}
+
+model AuthIdentity {
+  id           String       @id @default(uuid(7))
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     AuthProvider
+  providerUid  String
+  passwordHash String? // argon2id — apenas provider=email
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, providerUid])
+  @@map("auth_identities")
+}
+
+model RefreshToken {
+  id         String    @id @default(uuid(7))
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  familyId   String // rotação com detecção de reuso: reuso revoga a família toda
+  deviceInfo String?
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([familyId])
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model ConsentPurpose {
+  id             String            @id @default(uuid(7))
+  key            ConsentPurposeKey @unique
+  currentVersion Int               @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions ConsentVersion[]
+
+  @@map("consent_purposes")
+}
+
+model ConsentVersion {
+  id          String         @id @default(uuid(7))
+  purposeId   String
+  purpose     ConsentPurpose @relation(fields: [purposeId], references: [id])
+  version     Int
+  textPt      String // texto exato exibido — imutável (prova LGPD art. 8º §1º)
+  textEn      String
+  effectiveAt DateTime
+
+  createdAt DateTime @default(now())
+
+  userConsents UserConsent[]
+
+  @@unique([purposeId, version])
+  @@map("consent_versions")
+}
+
+// Append-only: revogar = nova linha com granted=false. Nunca UPDATE.
+model UserConsent {
+  id               String         @id @default(uuid(7))
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  consentVersionId String
+  consentVersion   ConsentVersion @relation(fields: [consentVersionId], references: [id])
+  granted          Boolean
+  ipHash           String?
+  userAgent        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, consentVersionId])
+  @@map("user_consents")
+}
+
+model DataSubjectRequest {
+  id          String    @id @default(uuid(7))
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  type        DsrType
+  status      DsrStatus @default(open)
+  exportUrl   String? // R2, URL expirante (portabilidade)
+  handledById String?
+  handledBy   StaffUser? @relation(fields: [handledById], references: [id])
+  fulfilledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@map("data_subject_requests")
+}
+
+// ----------------------------------------------------------------------------
+// Conteúdo e pipeline
+// ----------------------------------------------------------------------------
+
+model Track {
+  id         String  @id @default(uuid(7))
+  key        String  @unique // catolica | evangelica | espirita | filosofica | buscador
+  namePt     String
+  nameEn     String
+  ttsVoicePt String?
+  ttsVoiceEn String?
+  active     Boolean @default(true)
+  sortOrder  Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  reflections      Reflection[]
+  publicationSlots PublicationSlot[]
+  prompts          Prompt[]
+
+  @@map("tracks")
+}
+
+model TimeSlot {
+  id          String      @id @default(uuid(7))
+  key         TimeSlotKey @unique
+  defaultTime String // "07:00" — horário local padrão do slot
+
+  createdAt DateTime @default(now())
+
+  reflections      Reflection[]
+  publicationSlots PublicationSlot[]
+  prompts          Prompt[]
+
+  @@map("time_slots")
+}
+
+model Reflection {
+  id              String         @id @default(uuid(7))
+  trackId         String
+  track           Track          @relation(fields: [trackId], references: [id])
+  slotId          String
+  slot            TimeSlot       @relation(fields: [slotId], references: [id])
+  theme           String?
+  scheduledDate   DateTime?      @db.Date
+  seasonalEventId String?
+  seasonalEvent   SeasonalEvent? @relation(fields: [seasonalEventId], references: [id])
+  createdBy       String         @default("pipeline") // "pipeline" ou staff id
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants ReflectionVariant[]
+
+  @@index([trackId, scheduledDate])
+  @@map("reflections")
+}
+
+model ReflectionVariant {
+  id           String     @id @default(uuid(7))
+  reflectionId String
+  reflection   Reflection @relation(fields: [reflectionId], references: [id], onDelete: Cascade)
+  language     Language
+  title        String
+  bodyText     String
+
+  // Citações religiosas (Apple 1.1.5): verificação humana obrigatória
+  citationSource     String?
+  citationVerified   Boolean   @default(false)
+  citationVerifiedById String?
+  citationVerifiedBy StaffUser? @relation("citationVerifier", fields: [citationVerifiedById], references: [id])
+  citationVerifiedAt DateTime?
+
+  // Metadados de geração por IA (Google GenAI policy: rotulagem)
+  isAiGenerated     Boolean @default(true)
+  aiModel           String?
+  aiPromptId        String?
+  aiPrompt          Prompt? @relation(fields: [aiPromptId], references: [id])
+  generationBatchId String?
+  generationIndex   Int? // 1..10
+
+  curationStatus CurationStatus @default(generated)
+  curatedById    String?
+  curatedBy      StaffUser?     @relation("curator", fields: [curatedById], references: [id])
+  curatorNotes   String?
+  publishedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  audioAssets      AudioAsset[]
+  publicationSlots PublicationSlot[]
+  comments         Comment[]
+
+  @@index([curationStatus])
+  @@index([reflectionId, language])
+  @@map("reflection_variants")
+}
+
+model AudioAsset {
+  id          String            @id @default(uuid(7))
+  variantId   String
+  variant     ReflectionVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  r2Key       String
+  durationMs  Int?
+  ttsProvider String
+  ttsVoice    String
+  format      String            @default("m4a")
+  sizeBytes   Int?
+  status      AudioStatus       @default(pending)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("audio_assets")
+}
+
+// A grade concreta: 1 linha por dia × slot × trilha × idioma. O cron varre isto.
+model PublicationSlot {
+  id        String                @id @default(uuid(7))
+  date      DateTime              @db.Date
+  slotId    String
+  slot      TimeSlot              @relation(fields: [slotId], references: [id])
+  trackId   String
+  track     Track                 @relation(fields: [trackId], references: [id])
+  language  Language
+  variantId String?
+  variant   ReflectionVariant?    @relation(fields: [variantId], references: [id])
+  status    PublicationSlotStatus @default(open)
+  publishAt DateTime // tz-aware, UTC
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date, slotId, trackId, language])
+  @@index([status, publishAt])
+  @@map("publication_slots")
+}
+
+model SeasonalEvent {
+  id               String   @id @default(uuid(7))
+  name             String
+  dateStart        DateTime @db.Date
+  dateEnd          DateTime @db.Date
+  trackKeys        String[] // vazio = todas as trilhas
+  priority         Int      @default(0)
+  promptOverrideId String?
+  promptOverride   Prompt?  @relation(fields: [promptOverrideId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reflections Reflection[]
+
+  @@index([dateStart, dateEnd])
+  @@map("seasonal_events")
+}
+
+// Banco de prompts versionado, editável no admin — iterar sem deploy.
+model Prompt {
+  id       String       @id @default(uuid(7))
+  key      String
+  trackId  String?
+  track    Track?       @relation(fields: [trackId], references: [id])
+  slotId   String?
+  slot     TimeSlot?    @relation(fields: [slotId], references: [id])
+  language Language?
+  body     String // template com variáveis
+  version  Int          @default(1)
+  active   Boolean      @default(true)
+  notes    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variants       ReflectionVariant[]
+  seasonalEvents SeasonalEvent[]
+
+  @@unique([key, version])
+  @@map("prompts")
+}
+
+// ----------------------------------------------------------------------------
+// Social e engajamento
+// ----------------------------------------------------------------------------
+
+model Comment {
+  id              String            @id @default(uuid(7))
+  userId          String
+  user            User              @relation(fields: [userId], references: [id])
+  variantId       String
+  variant         ReflectionVariant @relation(fields: [variantId], references: [id])
+  body            String
+  language        Language
+  status          UgcStatus         @default(visible)
+  moderationScore Json?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([variantId, createdAt])
+  @@map("comments")
+}
+
+model Intention {
+  id            String    @id @default(uuid(7))
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  body          String
+  language      Language
+  isAnonymous   Boolean   @default(false)
+  status        UgcStatus @default(visible)
+  moderationScore Json?
+  supportsCount Int       @default(0) // denormalizado
+  expiresAt     DateTime // mural rotativo (~30 dias)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  supports IntentionSupport[]
+
+  @@index([language, status, createdAt])
+  @@map("intentions")
+}
+
+model IntentionSupport {
+  intentionId String
+  intention   Intention @relation(fields: [intentionId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([intentionId, userId]) // 1 toque, idempotente
+  @@map("intention_supports")
+}
+
+// Dado de saúde (LGPD art. 11): gravável apenas com consentimento
+// health_checkins ativo — guard no service, não só na UI.
+model Checkin {
+  id        String      @id @default(uuid(7))
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime    @db.Date
+  type      CheckinType
+  value     Int         @db.SmallInt // escala numérica — minimização de dados
+  noteShort String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date, type])
+  @@map("checkins")
+}
+
+// Envelope encryption: só ciphertext — ZERO colunas de texto plano.
+// Decrypt exclusivamente via JWT do dono; nenhum endpoint admin lê isto.
+model JournalEntry {
+  id         String   @id @default(uuid(7))
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ciphertext Bytes
+  iv         Bytes
+  authTag    Bytes
+  dekVersion Int
+  entryDate  DateTime @db.Date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, entryDate])
+  @@map("journal_entries")
+}
+
+model UserEncryptionKey {
+  id               String @id @default(uuid(7))
+  userId           String
+  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wrappedDek       Bytes // DEK AES-256 wrapped pela master key (secret manager)
+  masterKeyVersion Int
+  dekVersion       Int    @default(1)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, dekVersion])
+  @@map("user_encryption_keys")
+}
+
+model Follow {
+  followerId String
+  follower   User   @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followeeId String
+  followee   User   @relation("followee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([followerId, followeeId])
+  @@map("follows")
+}
+
+model Friendship {
+  id          String           @id @default(uuid(7))
+  userAId     String // convenção: userAId < userBId
+  userA       User             @relation("userA", fields: [userAId], references: [id], onDelete: Cascade)
+  userBId     String
+  userB       User             @relation("userB", fields: [userBId], references: [id], onDelete: Cascade)
+  status      FriendshipStatus @default(pending)
+  requestedBy String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userAId, userBId])
+  @@map("friendships")
+}
+
+// Apple 1.2: bloquear usuários é obrigatório em app com UGC.
+model Block {
+  blockerId String
+  blocker   User   @relation("blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User   @relation("blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([blockerId, blockedId])
+  @@map("blocks")
+}
+
+// Streak compassivo: 1 "perdão" por semana (graceUsedAt).
+model Streak {
+  id               String    @id @default(uuid(7))
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentCount     Int       @default(0)
+  longestCount     Int       @default(0)
+  lastActivityDate DateTime? @db.Date
+  graceUsedAt      DateTime?
+  timezoneAtCalc   String?
+
+  updatedAt DateTime @updatedAt
+
+  @@map("streaks")
+}
+
+model NotificationSchedule {
+  id         String           @id @default(uuid(7))
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       NotificationKind
+  localTime  String // "07:30" no timezone do usuário
+  daysOfWeek Int              @default(127) // bitmask dom..sáb
+  enabled    Boolean          @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, kind])
+  @@map("notification_schedules")
+}
+
+model Device {
+  id         String         @id @default(uuid(7))
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform   DevicePlatform
+  pushToken  String         @unique
+  locale     String?
+  appVersion String?
+  lastSeenAt DateTime       @default(now())
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("devices")
+}
+
+// ----------------------------------------------------------------------------
+// Billing — RevenueCat é a fonte de verdade; estas tabelas são cache/derivadas
+// ----------------------------------------------------------------------------
+
+model Subscription {
+  id                  String             @id @default(uuid(7))
+  userId              String
+  user                User               @relation(fields: [userId], references: [id])
+  source              SubscriptionSource
+  rcOriginalAppUserId String?
+  productId           String // monthly_1990 | annual_12900
+  status              SubscriptionStatus
+  currentPeriodEnd    DateTime?
+  rawEvent            Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+model Entitlement {
+  id        String             @id @default(uuid(7))
+  userId    String
+  user      User               @relation(fields: [userId], references: [id])
+  key       String             @default("premium")
+  active    Boolean            @default(false)
+  expiresAt DateTime?
+  source    SubscriptionSource?
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@map("entitlements")
+}
+
+// Append-only: todo webhook bruto, idempotente por eventId.
+model BillingEvent {
+  id        String   @id @default(uuid(7))
+  eventId   String   @unique
+  provider  String // revenuecat | stripe
+  eventType String
+  payload   Json
+
+  createdAt DateTime @default(now())
+
+  @@map("billing_events")
+}
+
+// ----------------------------------------------------------------------------
+// Moderação, staff e auditoria
+// ----------------------------------------------------------------------------
+
+model ModerationFlag {
+  id          String               @id @default(uuid(7))
+  contentType ModeratedContentType
+  contentId   String
+  source      ModerationSource
+  reporterId  String?
+  reporter    User?                @relation("reporter", fields: [reporterId], references: [id])
+  reason      String?
+  autoScores  Json?
+  status      ModerationFlagStatus @default(open)
+  slaDeadline DateTime // createdAt + 24h (Apple 1.2)
+  resolvedById String?
+  resolvedBy  StaffUser?           @relation(fields: [resolvedById], references: [id])
+  resolvedAt  DateTime?
+  resolution  ModerationResolution @default(none)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  actions ModerationAction[]
+
+  @@index([status, slaDeadline])
+  @@index([contentType, contentId])
+  @@map("moderation_flags")
+}
+
+model ModerationAction {
+  id           String               @id @default(uuid(7))
+  flagId       String?
+  flag         ModerationFlag?      @relation(fields: [flagId], references: [id])
+  targetUserId String
+  targetUser   User                 @relation("targetUser", fields: [targetUserId], references: [id])
+  action       ModerationResolution
+  reason       String
+  durationDays Int? // suspensões temporárias
+  staffId      String
+  staff        StaffUser            @relation(fields: [staffId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([targetUserId])
+  @@map("moderation_actions")
+}
+
+// Tabela separada de users: superfícies de ataque e ciclos de vida distintos.
+model StaffUser {
+  id           String    @id @default(uuid(7))
+  email        String    @unique
+  name         String
+  role         StaffRole
+  passwordHash String
+  totpSecret   String? // TOTP obrigatório para ativar a conta
+  active       Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  curatedVariants   ReflectionVariant[]  @relation("curator")
+  verifiedCitations ReflectionVariant[]  @relation("citationVerifier")
+  resolvedFlags     ModerationFlag[]
+  moderationActions ModerationAction[]
+  dsrHandled        DataSubjectRequest[]
+  auditEntries      AuditLog[]
+
+  @@map("staff_users")
+}
+
+// Append-only (REVOKE UPDATE/DELETE via migration SQL). Interceptor global no
+// AdminModule grava aqui toda leitura de dado social de usuário por staff.
+model AuditLog {
+  id           String    @id @default(uuid(7))
+  staffId      String
+  staff        StaffUser @relation(fields: [staffId], references: [id])
+  action       String
+  resourceType String
+  resourceId   String?
+  targetUserId String?
+  metadata     Json?
+  ip           String?
+
+  createdAt DateTime @default(now())
+
+  @@index([staffId, createdAt])
+  @@index([targetUserId])
+  @@map("audit_log")
+}
+
+// ----------------------------------------------------------------------------
+// Analytics (particionar por mês via migration SQL quando o volume pedir)
+// ----------------------------------------------------------------------------
+
+model AnalyticsEvent {
+  id     String  @id @default(uuid(7))
+  userId String?
+  anonId String?
+  name   String
+  props  Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@map("analytics_events")
+}
+
+// Agregações diárias materializadas para o dashboard do admin.
+model DailyMetric {
+  id     String   @id @default(uuid(7))
+  date   DateTime @db.Date
+  metric String // dau | wau | mau | d1_retention | premium_conversion | ...
+  dimension String? // trilha, idioma etc.
+  value  Float
+
+  createdAt DateTime @default(now())
+
+  @@unique([date, metric, dimension])
+  @@map("daily_metrics")
+}

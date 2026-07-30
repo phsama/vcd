@@ -1,0 +1,19 @@
+{
+  "name": "voceconhecedeus",
+  "private": true,
+  "packageManager": "pnpm@11.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "contracts:generate": "turbo run contracts:generate --filter=@vcd/api"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0"
+  }
+}

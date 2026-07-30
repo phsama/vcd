@@ -1,0 +1,58 @@
+{
+  "name": "@vcd/api",
+  "version": "0.0.1",
+  "private": true,
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "scripts": {
+    "db:seed": "tsx prisma/seed.ts",
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --config test/jest-e2e.json --runInBand",
+    "test:e2e": "jest --config test/jest-e2e.json --runInBand",
+    "lint": "eslint \"src/**/*.ts\"",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "contracts:generate": "node dist/generate-openapi.js ../../packages/contracts/openapi.json"
+  },
+  "dependencies": {
+    "@bull-board/api": "^8.3.2",
+    "@bull-board/express": "^8.3.2",
+    "@nestjs/bullmq": "^11.0.4",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/schedule": "^6.1.3",
+    "@nestjs/swagger": "^11.0.0",
+    "@prisma/client": "^6.8.0",
+    "argon2": "^0.45.1",
+    "bullmq": "^5.81.2",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^16.4.0",
+    "ioredis": "^5.11.1",
+    "jose": "^5.10.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/testing": "^11.1.28",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.0.0",
+    "@types/supertest": "^7.2.1",
+    "jest": "^30.4.2",
+    "prisma": "^6.8.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.12",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

@@ -1,0 +1,16 @@
+# Placeholder — ativa na Fase 3, quando o app Flutter for criado.
+# Vai rodar: flutter analyze, flutter test, build de release (Android) por PR.
+name: CI — Mobile
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/mobile/**"
+      - ".github/workflows/ci-mobile.yml"
+
+jobs:
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CI do Flutter será configurado na Fase 3 (app criado com o SDK)."

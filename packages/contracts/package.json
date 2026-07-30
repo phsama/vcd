@@ -1,0 +1,12 @@
+{
+  "name": "@vcd/contracts",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Contrato OpenAPI gerado pela API — fonte de verdade para clients Dart (mobile) e TS (admin).",
+  "scripts": {
+    "generate:admin-types": "openapi-typescript openapi.json -o ../../apps/admin/src/lib/api/schema.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.6.0"
+  }
+}
