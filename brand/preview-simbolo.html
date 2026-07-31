@@ -1,0 +1,49 @@
+<!-- Prova do símbolo em contexto: Noite, Papel, tamanhos pequenos e ícone -->
+<meta charset="utf-8">
+<title>Chama-Pergunta · prova v0.1</title>
+<style>
+  body { margin: 0; font-family: Georgia, serif; background: #f0ece3; padding: 2rem; }
+  .grid { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+  .card { border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; }
+  .noite { background: #131521; }
+  .papel { background: #F8F2E7; border: 1px solid #d8d2c4; }
+  .g { width: 300px; height: 300px; }
+  .s { width: 140px; height: 140px; }
+  .label { font-size: 12px; color: #6b6558; text-align: center; margin-top: .4rem; }
+  .icone { width: 120px; height: 120px; border-radius: 27px; background: #131521; display: flex; align-items: center; justify-content: center; }
+  svg { display: block; }
+</style>
+<div class="grid">
+  <div>
+    <div class="card noite g">
+      <svg width="220" height="220" viewBox="0 0 512 512"><g fill="#E2A253"><path d="M 312 52 C 330 90, 312 128, 288 156 C 272 176, 264 196, 268 214 C 308 224, 344 252, 344 296 C 344 342, 310 368, 276 376 C 268 378, 258 376, 254 370 C 250 362, 254 352, 262 346 C 288 334, 308 314, 308 290 C 308 260, 284 240, 252 234 C 238 230, 226 220, 220 208 C 214 184, 218 162, 232 144 C 246 130, 252 118, 250 106 C 262 94, 286 76, 312 52 Z"/><circle cx="258" cy="428" r="32"/></g></svg>
+    </div>
+    <div class="label">Mundo da Noite · 220px</div>
+  </div>
+  <div>
+    <div class="card papel g">
+      <svg width="220" height="220" viewBox="0 0 512 512"><g fill="#2B241C"><path d="M 312 52 C 330 90, 312 128, 288 156 C 272 176, 264 196, 268 214 C 308 224, 344 252, 344 296 C 344 342, 310 368, 276 376 C 268 378, 258 376, 254 370 C 250 362, 254 352, 262 346 C 288 334, 308 314, 308 290 C 308 260, 284 240, 252 234 C 238 230, 226 220, 220 208 C 214 184, 218 162, 232 144 C 246 130, 252 118, 250 106 C 262 94, 286 76, 312 52 Z"/><circle cx="258" cy="428" r="32"/></g></svg>
+    </div>
+    <div class="label">Mundo do Dia · tinta sobre papel</div>
+  </div>
+  <div>
+    <div class="card papel s">
+      <svg width="48" height="48" viewBox="0 0 512 512"><g fill="#2B241C"><path d="M 312 52 C 330 90, 312 128, 288 156 C 272 176, 264 196, 268 214 C 308 224, 344 252, 344 296 C 344 342, 310 368, 276 376 C 268 378, 258 376, 254 370 C 250 362, 254 352, 262 346 C 288 334, 308 314, 308 290 C 308 260, 284 240, 252 234 C 238 230, 226 220, 220 208 C 214 184, 218 162, 232 144 C 246 130, 252 118, 250 106 C 262 94, 286 76, 312 52 Z"/><circle cx="258" cy="428" r="32"/></g></svg>
+    </div>
+    <div class="label">48px (teste de legibilidade)</div>
+  </div>
+  <div>
+    <div class="card papel s">
+      <svg width="24" height="24" viewBox="0 0 512 512"><g fill="#2B241C"><path d="M 312 52 C 330 90, 312 128, 288 156 C 272 176, 264 196, 268 214 C 308 224, 344 252, 344 296 C 344 342, 310 368, 276 376 C 268 378, 258 376, 254 370 C 250 362, 254 352, 262 346 C 288 334, 308 314, 308 290 C 308 260, 284 240, 252 234 C 238 230, 226 220, 220 208 C 214 184, 218 162, 232 144 C 246 130, 252 118, 250 106 C 262 94, 286 76, 312 52 Z"/><circle cx="258" cy="428" r="32"/></g></svg>
+    </div>
+    <div class="label">24px (mínimo absoluto)</div>
+  </div>
+  <div>
+    <div class="card papel s" style="background:#f0ece3;border:none">
+      <div class="icone">
+        <svg width="84" height="84" viewBox="0 0 512 512"><g fill="#E2A253"><path d="M 312 52 C 330 90, 312 128, 288 156 C 272 176, 264 196, 268 214 C 308 224, 344 252, 344 296 C 344 342, 310 368, 276 376 C 268 378, 258 376, 254 370 C 250 362, 254 352, 262 346 C 288 334, 308 314, 308 290 C 308 260, 284 240, 252 234 C 238 230, 226 220, 220 208 C 214 184, 218 162, 232 144 C 246 130, 252 118, 250 106 C 262 94, 286 76, 312 52 Z"/><circle cx="258" cy="428" r="32"/></g></svg>
+      </div>
+    </div>
+    <div class="label">Ícone de app (simulação)</div>
+  </div>
+</div>
