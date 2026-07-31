@@ -13,6 +13,8 @@ async function bootstrap() {
       'https://voceconhecedeus.com.br',
       'https://www.voceconhecedeus.com.br',
       /\.pages\.dev$/, // previews do Cloudflare Pages
+      /\.lovable\.app$/, // previews do Lovable
+      /\.lovableproject\.com$/,
       'http://localhost:8080',
     ],
     methods: ['GET', 'POST'],
