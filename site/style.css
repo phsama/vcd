@@ -1,0 +1,320 @@
+/* Hallmark · macrostructure: Marquee Hero · genre: editorial · theme: custom (brand-locked "Dois mundos, uma chama")
+ * H1 knobs: size=xxl, alignment=left-bias, underlay=none · nav: N9 edge-aligned (wordmark serif, CTA text+arrow, spacious)
+ * footer: Ft6 letter-close (roman, postscript=yes, 60ch) · sections: S2 manifesto · F4 dia I/II/III · F3 trilhas · C2 waitlist
+ * divider: hard colour change (a página amanhece: Noite → Papel) + rule-thick chama
+ * tone: editorial-contemplativo · audience: buscadores BR + revisores de store · use: lista de espera
+ * pre-emit critique: P5 H4 E4 S5 R5 V4 */
+
+@import url("tokens.css");
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { overflow-x: clip; }
+
+body {
+  font-family: var(--font-leitura);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--tinta);
+  background: var(--papel);
+  font-variant-numeric: oldstyle-nums;
+}
+
+::selection { background: var(--chama); color: var(--noite); }
+
+:focus-visible {
+  outline: var(--rule-thick) solid var(--foco);
+  outline-offset: 3px;
+}
+
+/* ---------- O Mundo da Noite: nav + marquee ---------- */
+
+.noite-mundo {
+  background: var(--noite);
+  color: var(--tinta-noite);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space-lg) clamp(1.25rem, 5vw, 4rem);
+}
+
+.nav__wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-md);
+  color: var(--tinta-noite);
+  text-decoration: none;
+  letter-spacing: -0.015em;
+}
+
+.nav__cta {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--chama);
+  text-decoration: none;
+  border-bottom: var(--rule-hairline) solid transparent;
+  transition: border-color var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+  padding-block: var(--space-xs);
+}
+
+.nav__cta:hover { border-bottom-color: var(--chama); }
+
+.marquee {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-xl) clamp(1.25rem, 5vw, 4rem) var(--space-2xl);
+}
+
+.marquee h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-style: normal;
+  font-size: var(--text-display);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  max-width: 11ch;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.marquee .chama-glifo {
+  display: inline-block;
+  height: 0.92em;
+  width: auto;
+  transform: translateY(0.12em);
+  color: var(--chama);
+  transform-origin: 50% 88%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .marquee .chama-glifo { animation: oscilar 7s var(--ease-in-out) infinite alternate; }
+  @keyframes oscilar {
+    from { transform: translateY(0.12em) rotate(-1.2deg); }
+    to   { transform: translateY(0.12em) rotate(1.2deg); }
+  }
+}
+
+.marquee__pista {
+  margin-top: var(--space-2xl);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--neutro-noite);
+}
+
+/* ---------- O amanhecer (divisor) ---------- */
+
+.amanhecer { border: none; height: var(--rule-thick); background: var(--chama); }
+
+/* ---------- O Mundo do Dia ---------- */
+
+.dia-mundo { background: var(--papel); }
+
+.secao {
+  max-width: 42rem;
+  margin-inline: auto;
+  padding: var(--space-3xl) clamp(1.25rem, 5vw, 2rem);
+}
+
+.secao + .secao { padding-top: 0; }
+
+.secao h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-style: normal;
+  font-size: var(--text-xl);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-lg);
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.secao p { max-width: 65ch; margin-bottom: var(--space-md); }
+
+.compromissos { list-style: none; margin-top: var(--space-lg); }
+
+.compromissos li {
+  position: relative;
+  padding-left: var(--space-md);
+  margin-bottom: var(--space-sm);
+  max-width: 60ch;
+}
+
+.compromissos li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 7px;
+  height: 7px;
+  background: var(--chama-profunda);
+}
+
+/* F4 · a liturgia do dia */
+
+.dia { list-style: none; border-left: var(--rule-hairline) solid var(--regua); }
+
+.dia li { padding: 0 0 var(--space-xl) var(--space-lg); position: relative; }
+
+.dia li:last-child { padding-bottom: 0; }
+
+.dia .numeral {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--chama-profunda);
+  font-size: var(--text-md);
+  display: block;
+  margin-bottom: var(--space-xs);
+}
+
+.dia h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-lg);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-xs);
+}
+
+.dia p { color: var(--tinta); max-width: 55ch; }
+
+/* F3 · as trilhas */
+
+.trilhas { width: 100%; border-collapse: collapse; }
+
+.trilhas tr { border-bottom: var(--rule-hairline) solid var(--regua); }
+
+.trilhas tr:first-child { border-top: var(--rule-hairline) solid var(--regua); }
+
+.trilhas th, .trilhas td { text-align: left; padding: var(--space-md) var(--space-xs); vertical-align: baseline; }
+
+.trilhas th {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-md);
+  white-space: nowrap;
+  padding-right: var(--space-lg);
+}
+
+.trilhas td { color: var(--neutro); }
+
+.trilha-ponto {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: var(--space-xs);
+  transform: translateY(-1px);
+}
+
+.trilhas .aberta {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--neutro);
+  margin-top: var(--space-md);
+}
+
+/* C2 · lista de espera */
+
+.espera { background: var(--papel-2); border-radius: var(--radius-sm); padding: var(--space-xl) !important; }
+
+.espera h2 { margin-bottom: var(--space-xs); }
+
+.espera .convite { color: var(--neutro); margin-bottom: var(--space-lg); }
+
+.espera form { display: flex; gap: var(--space-sm); max-width: 34rem; }
+
+.espera input[type="email"] {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  padding: var(--space-sm) var(--space-md);
+  border: var(--rule-hairline) solid var(--neutro);
+  border-radius: var(--radius-sm);
+  background: var(--papel);
+  color: var(--tinta);
+}
+
+.espera input[type="email"]::placeholder { color: var(--neutro); }
+
+.espera button {
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  padding: var(--space-sm) var(--space-lg);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--chama);
+  color: var(--noite);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out);
+}
+
+.espera button:hover { opacity: 0.92; }
+.espera button:active { transform: translateY(1px); }
+.espera button:disabled { opacity: 0.55; cursor: default; }
+
+.espera .ajuda {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--neutro);
+  margin-top: var(--space-sm);
+}
+
+.espera .ajuda a { color: var(--chama-profunda); }
+
+.espera [data-estado] { font-size: var(--text-base); }
+.espera [data-estado="erro"] { color: oklch(45% 0.16 30); margin-top: var(--space-sm); font-family: var(--font-ui); font-size: var(--text-sm); }
+.espera [data-estado="sucesso"] {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  color: var(--tinta);
+}
+
+/* Ft6 · carta de fechamento */
+
+.carta {
+  max-width: 42rem;
+  margin-inline: auto;
+  padding: var(--space-3xl) clamp(1.25rem, 5vw, 2rem) var(--space-2xl);
+}
+
+.carta .assinatura { max-width: 60ch; margin-bottom: var(--space-md); }
+
+.carta .ps { color: var(--neutro); font-style: italic; max-width: 60ch; }
+
+.carta .meta {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: var(--rule-hairline) solid var(--regua);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--neutro);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs) var(--space-md);
+}
+
+.carta .meta a { color: var(--neutro); }
+.carta .meta a:hover { color: var(--chama-profunda); }
+
+/* ---------- Responsivo ---------- */
+
+@media (max-width: 40rem) {
+  .secao, .carta { padding-inline: clamp(1rem, 4vw, 1.5rem); }
+  .secao { padding-block: var(--space-2xl); }
+  .espera { padding: var(--space-lg) !important; }
+  .espera form { flex-direction: column; }
+  .espera button { width: 100%; min-height: 44px; }
+  .trilhas th { white-space: normal; }
+  .marquee__pista { margin-top: var(--space-xl); }
+}

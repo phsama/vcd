@@ -838,6 +838,22 @@ model AuditLog {
 }
 
 // ----------------------------------------------------------------------------
+// Lista de espera (LP pré-lançamento)
+// ----------------------------------------------------------------------------
+
+model WaitlistSignup {
+  id       String  @id @default(uuid(7))
+  email    String  @unique
+  trackKey String?
+  locale   String  @default("pt-BR")
+  source   String  @default("lp")
+
+  createdAt DateTime @default(now())
+
+  @@map("waitlist_signups")
+}
+
+// ----------------------------------------------------------------------------
 // Analytics (particionar por mês via migration SQL quando o volume pedir)
 // ----------------------------------------------------------------------------
 

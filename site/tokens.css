@@ -1,0 +1,62 @@
+/* Tokens da marca VCD · sistema "Dois mundos, uma chama" · fonte: docs/marca.md */
+:root {
+  /* Mundo do Dia */
+  --papel:          oklch(96.5% 0.013 85);
+  --papel-2:        oklch(93%   0.015 85);
+  --regua:          oklch(84%   0.012 85);
+  --neutro:         oklch(52%   0.010 80);
+  --tinta:          oklch(21%   0.012 70);
+
+  /* Mundo da Noite */
+  --noite:          oklch(15%   0.012 265);
+  --noite-2:        oklch(19%   0.014 265);
+  --regua-noite:    oklch(30%   0.012 265);
+  --neutro-noite:   oklch(62%   0.010 265);
+  --tinta-noite:    oklch(93.5% 0.007 85);
+
+  /* A Chama (único acento) */
+  --chama:          oklch(71% 0.14 60);
+  --chama-profunda: oklch(52% 0.13 50);
+  --foco:           oklch(60% 0.17 55);
+
+  /* Trilhas (marcações discretas) */
+  --trilha-catolica:   oklch(66% 0.09 85);
+  --trilha-evangelica: oklch(66% 0.09 40);
+  --trilha-espirita:   oklch(66% 0.09 245);
+  --trilha-filosofica: oklch(66% 0.09 140);
+  --trilha-buscador:   oklch(66% 0.09 20);
+
+  /* Tipografia */
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-leitura: "Newsreader", ui-serif, Georgia, serif;
+  --font-ui:      "Switzer", ui-sans-serif, system-ui, sans-serif;
+
+  /* Escala (razão 1.25 sobre 17px) */
+  --text-sm:      0.85rem;
+  --text-base:    1.0625rem;
+  --text-md:      1.33rem;
+  --text-lg:      1.66rem;
+  --text-xl:      2.08rem;
+  --text-2xl:     2.6rem;
+  --text-display: clamp(2.9rem, 8.5vw + 0.5rem, 6.75rem);
+
+  /* Espaço (escala 4pt) */
+  --space-2xs: 0.25rem;
+  --space-xs:  0.5rem;
+  --space-sm:  0.75rem;
+  --space-md:  1.25rem;
+  --space-lg:  2rem;
+  --space-xl:  3.25rem;
+  --space-2xl: 5rem;
+  --space-3xl: 8rem;
+
+  /* Movimento */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:    160ms;
+
+  /* Réguas */
+  --rule-hairline: 1px;
+  --rule-thick:    2px;
+  --radius-sm:     6px;
+}

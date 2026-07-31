@@ -8,6 +8,15 @@ import { buildOpenApiConfig } from './config/openapi';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('v1');
+  app.enableCors({
+    origin: [
+      'https://voceconhecedeus.com.br',
+      'https://www.voceconhecedeus.com.br',
+      /\.pages\.dev$/, // previews do Cloudflare Pages
+      'http://localhost:8080',
+    ],
+    methods: ['GET', 'POST'],
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.enableShutdownHooks();
 

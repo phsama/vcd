@@ -11,6 +11,7 @@ import { ConsentsModule } from './modules/consents/consents.module';
 import { UsersModule } from './modules/users/users.module';
 import { ContentModule } from './modules/content/content.module';
 import { PipelineModule } from './modules/pipeline/pipeline.module';
+import { WaitlistModule } from './modules/waitlist/waitlist.module';
 
 const redisUrl = new URL(env.REDIS_URL);
 
@@ -32,6 +33,7 @@ const redisUrl = new URL(env.REDIS_URL);
     UsersModule,
     ContentModule,
     PipelineModule,
+    WaitlistModule,
   ],
 })
 export class AppModule {}
